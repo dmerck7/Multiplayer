@@ -1,6 +1,4 @@
 using Godot;
-using System;
-using System.Data.Common;
 
 public partial class Player : CharacterBody3D
 {
@@ -21,16 +19,17 @@ public partial class Player : CharacterBody3D
 	[Export]
 	public Vector3 velocity = new Vector3();
 
-	//public enum ANIMATIONS {JUMP_UP, WALK}
+	public enum ANIMATIONS {JUMP_UP, WALK}
 	
 	[Export]
-	public int currentAnimation = 1;
+	public int currentAnimation = (int)ANIMATIONS.WALK;
 
 	[Export]
 	public long player = 1;
 	
 	[Export]
 	public Vector2 motion = new Vector2();
+	public Transform3D orientation = new Transform3D();
 
 	public override void _Ready()
 	{
@@ -45,6 +44,8 @@ public partial class Player : CharacterBody3D
 
 		hud.Hide();
 		this.animationTree.Active = true;
+
+		orientation.Basis = this.GlobalTransform.Basis;
 
 		if (!Multiplayer.IsServer())
 		{
@@ -76,6 +77,15 @@ public partial class Player : CharacterBody3D
 	{
 		this.motion = this.motion.Lerp(playerInput.inputMotion, MOTION_INTERPOLATE_SPEED * (float)delta);
 
+		var cameraBasis = playerInput.GetCameraRotationBasis();
+		var cameraZ = cameraBasis.Z;
+		var cameraX = cameraBasis.X;
+		
+		cameraZ.Y = 0;
+		cameraZ = cameraZ.Normalized();
+		cameraX.Y = 0;
+		cameraX = cameraX.Normalized();
+
 		// Add the gravity.
 		if (!this.IsOnFloor())
 		{
@@ -92,7 +102,7 @@ public partial class Player : CharacterBody3D
 		} 
 		else if (this.playerInput.jumping && this.IsOnFloor())
 		{
-			this.currentAnimation = 0; // (int)ANIMATIONS.JUMP_UP;
+			this.currentAnimation = (int)ANIMATIONS.JUMP_UP;
 			var velocity = this.Velocity;
 			velocity.Y = JUMP_VELOCITY;
 			this.Velocity = velocity;
@@ -100,27 +110,61 @@ public partial class Player : CharacterBody3D
 		}
 		else if (this.IsOnFloor())
 		{
-			this.currentAnimation = 1; // (int)ANIMATIONS.WALK;
+			var playerLookatTarget = cameraX * motion.X + cameraZ * motion.Y;
+		
+			if (playerLookatTarget.Length() > 0.001f)
+			{
+				Quaternion qFrom = orientation.Basis.GetRotationQuaternion();
+				Quaternion qTo = new Transform3D().LookingAt(playerLookatTarget, Vector3.Up).Basis.GetRotationQuaternion().Normalized();
+
+				orientation.Basis = new Basis(qFrom.Slerp(qTo, (float)delta * ROTATION_INTERPOLATE_SPEED));
+			}
+			
+			// Using only the horizontal velocity, interpolate towards the input
+			var horizontalVelocity = this.Velocity;
+			horizontalVelocity.Y = 0;
 		
 			var speed = (playerInput.running)? RUN_SPEED: SPEED;
+
+			// Rotates the camera basis along the X axis in the amount current X rotation, but the negative version,
+			// which brings the Y axis straight back up, so we don't slow down/speed up when camera Y values 
+			// change beyond UP. Camera Y values don't remain UP, so this just fixes that because we need 
+			// to make sure out X and Z values are relative to an UP Y axis. 
+			cameraBasis = cameraBasis.Rotated(cameraBasis.X, -cameraBasis.GetEuler().X);
 			
-			var direction = (this.Transform.Basis * - new Vector3(motion.X, 0, motion.Y)); // negative to fix movement direction
-			
-			var velocity = this.Velocity;
-			if (direction.Length() > 0.01)
+			var direction = (cameraBasis * - new Vector3(motion.X, 0, motion.Y));
+			var positionTarget = direction * speed;
+
+			// Once under a certian velocity, just stop player. 
+			if (direction.Length() < 0.01)
 			{
-				velocity.X = direction.X * speed;
-				velocity.Z = direction.Z * speed;
+				horizontalVelocity = Vector3.Zero;
 			}
 			else
 			{
-				velocity.X = Mathf.MoveToward(velocity.X, 0, speed);
-				velocity.Z = Mathf.MoveToward(velocity.Z, 0, speed);
+				horizontalVelocity = horizontalVelocity.Lerp(positionTarget, ACCELERATION * (float)delta);
 			}
-			this.Velocity = velocity;
+
+			this.Velocity = horizontalVelocity;
+			
+			// The walk handles both walk and run animations
+			animate((int)ANIMATIONS.WALK, delta); 
 		}
 
+		this.SetUpDirection(Vector3.Up);
 		this.MoveAndSlide();
+
+		if (orientation.Basis.Z != Vector3.Zero)
+		{
+			var playerModel = this.GetNode<Node3D>("PlayerModel");
+
+			orientation.Origin = new Vector3();
+			orientation = orientation.Orthonormalized();
+			
+			var globalTransform = playerModel.GlobalTransform;
+			globalTransform.Basis = orientation.Basis;
+			playerModel.GlobalTransform = globalTransform;
+		}
 	}
 
 	private void animate(int anim, double delta = 0)
@@ -129,30 +173,15 @@ public partial class Player : CharacterBody3D
 
 		var isRunning = (playerInput.running)? 1: 0;
 		
-		if (!Multiplayer.IsServer())
-		{
-			//GD.Print("Current anim state is "+anim);
-		}
-		
 		// TODO: this needs some refactoring
-		if (anim == 0) //(int)ANIMATIONS.JUMP_UP)
+		if (anim == (int)ANIMATIONS.JUMP_UP)
 		{
 			this.animationTree.Set("parameters/state/transition_request", "jump");
 		}
-		else if (anim == 1) // (int)ANIMATIONS.WALK)
+		else if (anim == (int)ANIMATIONS.WALK)
 		{
-			if (!Multiplayer.IsServer() && isRunning==1)
-			{
-				//GD.Print(Multiplayer.GetUniqueId() + " is running");
-				//this.animationPlayer.Play("Standard Run");
-			} else {
-				//this.animationPlayer.Play("Walking");
-			}
-
 			this.animationTree.Set("parameters/state/transition_request", "walk"); // walk
 			this.animationTree.Set("parameters/Walking/blend_position", new Vector2(this.velocity.Length(), isRunning)); // blend position vector
-			//this.animationTree.Set("parameters/Walking/blend_position", new Vector2(3, isRunning)); // blend position vector
-
 		}
 	}
 

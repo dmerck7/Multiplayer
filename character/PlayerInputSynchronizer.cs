@@ -133,7 +133,7 @@ public partial class PlayerInputSynchronizer : MultiplayerSynchronizer
 		cameraRot.Rotation = rotation;
 	}
 
-	private Basis GetCameraRotationBasis()
+	public Basis GetCameraRotationBasis()
 	{
 		return cameraRot.GlobalTransform.Basis;
 	}
