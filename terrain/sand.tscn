@@ -1,0 +1,35 @@
+[gd_scene load_steps=8 format=3 uid="uid://cc8lud6lol0v2"]
+
+[ext_resource type="Texture2D" uid="uid://fo8k8ykmcovy" path="res://texture/sand/Ground054_1K-PNG/Ground054_1K-PNG_Color.png" id="1_7732m"]
+[ext_resource type="Texture2D" uid="uid://qfj64h1eiw6e" path="res://texture/sand/Ground054_1K-PNG/Ground054_1K-PNG_Displacement.png" id="2_lpj1h"]
+[ext_resource type="Texture2D" uid="uid://bp67bfkpxotdp" path="res://texture/sand/Ground054_1K-PNG/Ground054_1K-PNG_NormalGL.png" id="3_eav2x"]
+[ext_resource type="Texture2D" uid="uid://bf2kxvr2wcj6k" path="res://texture/sand/Ground054_1K-PNG/Ground054_1K-PNG_Roughness.png" id="4_6k4mq"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qtq43"]
+albedo_texture = ExtResource("1_7732m")
+roughness_texture = ExtResource("4_6k4mq")
+normal_enabled = true
+normal_texture = ExtResource("3_eav2x")
+heightmap_enabled = true
+heightmap_texture = ExtResource("2_lpj1h")
+uv1_scale = Vector3(20, 20, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ece82"]
+lightmap_size_hint = Vector2i(2, 2)
+material = SubResource("StandardMaterial3D_qtq43")
+size = Vector3(200, 1, 200)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vrqoi"]
+size = Vector3(200, 1, 200)
+
+[node name="Sand" type="StaticBody3D"]
+collision_layer = 5
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+layers = 524289
+lod_bias = 0.001
+gi_mode = 0
+mesh = SubResource("BoxMesh_ece82")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_vrqoi")

@@ -1,0 +1,53 @@
+[gd_scene load_steps=2 format=3 uid="uid://belynfvw35nn3"]
+
+[ext_resource type="Script" uid="uid://bxmh66q8k2hdy" path="res://gamePlay/MainMenu.cs" id="1_l04s0"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_l04s0")
+
+[node name="MenuPanel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect" type="TextureRect" parent="MenuPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainLabel" type="Label" parent="MenuPanel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Main Menu"
+
+[node name="MenuItems" type="VBoxContainer" parent="MenuPanel"]
+layout_mode = 0
+offset_left = 392.0
+offset_top = 168.0
+offset_right = 487.0
+offset_bottom = 261.0
+
+[node name="Network Options" type="Label" parent="MenuPanel/MenuItems"]
+layout_mode = 2
+text = "Network Options"
+
+[node name="ServerMode" type="Button" parent="MenuPanel/MenuItems"]
+layout_mode = 2
+text = "Start Host"
+
+[node name="ClientMode" type="Button" parent="MenuPanel/MenuItems"]
+layout_mode = 2
+text = "Start Client"
+
+[connection signal="pressed" from="MenuPanel/MenuItems/ServerMode" to="." method="_on_server_mode_pressed"]
+[connection signal="pressed" from="MenuPanel/MenuItems/ClientMode" to="." method="_on_client_mode_pressed"]

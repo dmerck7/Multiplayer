@@ -1,0 +1,35 @@
+[gd_scene load_steps=7 format=3 uid="uid://dq685d0ttfxho"]
+
+[ext_resource type="Script" uid="uid://de6ir4wlmnpa5" path="res://level/Level01.cs" id="1_ywa0e"]
+[ext_resource type="Texture2D" uid="uid://cemj76bansbwi" path="res://assets/environment/rogland_sunset_4k.exr" id="2_k511k"]
+[ext_resource type="PackedScene" uid="uid://cc8lud6lol0v2" path="res://terrain/sand.tscn" id="3_058pd"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_ekg2a"]
+panorama = ExtResource("2_k511k")
+
+[sub_resource type="Sky" id="Sky_3gs24"]
+sky_material = SubResource("PanoramaSkyMaterial_ekg2a")
+
+[sub_resource type="Environment" id="Environment_wjim3"]
+background_mode = 2
+sky = SubResource("Sky_3gs24")
+
+[node name="Level01" type="Node3D"]
+script = ExtResource("1_ywa0e")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_wjim3")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.373037, 0.927817, 0, -0.927817, 0.373037, 0, 61.1724, 71.2304)
+shadow_enabled = true
+
+[node name="Sand" parent="." instance=ExtResource("3_058pd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.320957, 0)
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("uid://dq66l0dgtyfkx")
+spawn_path = NodePath("../Players")
+spawn_limit = 10
